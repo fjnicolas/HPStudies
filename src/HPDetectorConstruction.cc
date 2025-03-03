@@ -66,6 +66,8 @@ G4VPhysicalVolume* HPDetectorConstruction::Construct()
   G4VPhysicalVolume* world = new G4PVPlacement(0,G4ThreeVector(),
 					       logicWorld,"World",0,false,0);
   // Target volume
+  std::cout << "Hello Fran " << radius << " " << targetLenght << std::endl;
+
   G4Tubs* solidT = new G4Tubs("Target",0.,radius,targetLenght,0.,CLHEP::twopi);
   logicTarget    = new G4LogicalVolume( solidT,targetMaterial,"Target");
   new G4PVPlacement(0,G4ThreeVector(),logicTarget,"Target",logicWorld,false,0);

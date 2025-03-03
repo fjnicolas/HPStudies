@@ -19,7 +19,9 @@
 
 using namespace std;
 
-//bins form pip and piom production
+// Compile as g++ -o CreateMult CreateMult.C `root-config --cflags --glibs` -I${G4WORKDIR}/include  -L${G4WORKDIR}/build -lg4hpDict
+
+// bins form pip and piom production
 const int Naran          = 12;
 const double mina[Naran] = {0 , 3,10,20,40, 60,100,140,180,240,300,360};
 const double maxa[Naran] = {10,10,20,40,60,100,140,180,240,300,360,420};
@@ -83,7 +85,7 @@ void CreateMult(const char* infiles, const char* out_histfile, bool include_ff){
       PP /= 1000;
       double aa = 1000.*atan( hAinfo->prodpart[ipart].pt / hAinfo->prodpart[ipart].mom[2] );
       for(int jj=0;jj<Naran;jj++){
-	if(aa>=mina[jj] && aa<maxa[jj])hMul[idx][jj]->Fill(PP);
+	      if(aa>=mina[jj] && aa<maxa[jj])hMul[idx][jj]->Fill(PP);
       }
     }
     

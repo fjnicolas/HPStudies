@@ -17,6 +17,7 @@ map <G4String, Target> createTargets () //to avoid using c++11
   myTargets ["Cu"] = Target ("Cu",  63.55, 29,  8.96);
   myTargets ["Ag"] = Target ("Ag", 106.87, 47, 10.49);
   myTargets ["Pb"] = Target ("Pb", 207.21, 82, 11.34);
+  myTargets ["BeWide"] = Target ("Be",   9.01,  4,  1.85, 20000);
 
   return myTargets;
 }

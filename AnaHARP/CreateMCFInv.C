@@ -46,6 +46,7 @@ double getxF(double incp,int tpdg,double mx,double my,double mz,double en);
 void CreateMCFInv();
 void CreateMCFInv(const char* infiles, const char* out_histfile){
 
+  std::cout << "Hello" << std::endl;
   TFile* foutput = new TFile(out_histfile,"RECREATE");
   TH2D* hmult[Npar];
   TH2D* hfinv[Npar];
@@ -62,7 +63,10 @@ void CreateMCFInv(const char* infiles, const char* out_histfile){
   std::string line;
   int counter = 0;
   while (ifs.good()) {
+    std::cout << "OO " << std::endl;
     getline(ifs,line);
+    std::cout << "II " << line << std::endl;
+
     if(line.find(".root")>10000)continue;
 
     evts->Add(line.c_str());

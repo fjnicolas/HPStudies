@@ -127,8 +127,8 @@ void CreateMCXSec(const char* infiles, const char* out_histfile){
       double pp = sqrt(pow(px,2)+ pow(py,2)+ pow(pz,2) );
       double aa = 1000.*acos(pz/pp); //mrad
       for(int i=0;i<Ntyp;i++){
-	hmult[idx][i]->Fill(pp,aa);
-	hxsec[idx][i]->Fill(pp,aa);
+        hmult[idx][i]->Fill(pp,aa);
+        hxsec[idx][i]->Fill(pp,aa);
       }//typ
     }//part
     
@@ -155,15 +155,15 @@ void CreateMCXSec(const char* infiles, const char* out_histfile){
       double deltap = pmax - pmin;
       
       for(int j=1;j<=Nang;j++){
-	double amin   = ( hxsec[0][p]->GetYaxis()->GetBinLowEdge(j) ) / 1000.; //mrad->rad
-	double amax   = ( hxsec[0][p]->GetYaxis()->GetBinUpEdge(j)  ) / 1000.;
-	double deltao = 2.*pival * (cos(amin) - cos(amax) );
-	
-	for(int k=0;k<Npar;k++){
-	  double xsecval = hxsec[k][p]->GetBinContent(i,j);
-	  xsecval *= (sigma_factor/ (deltap*deltao) );
-	  hxsec[k][p]->SetBinContent(i,j,xsecval);
-	}//particle
+        double amin   = ( hxsec[0][p]->GetYaxis()->GetBinLowEdge(j) ) / 1000.; //mrad->rad
+        double amax   = ( hxsec[0][p]->GetYaxis()->GetBinUpEdge(j)  ) / 1000.;
+        double deltao = 2.*pival * (cos(amin) - cos(amax) );
+        
+        for(int k=0;k<Npar;k++){
+          double xsecval = hxsec[k][p]->GetBinContent(i,j);
+          xsecval *= (sigma_factor/ (deltap*deltao) );
+          hxsec[k][p]->SetBinContent(i,j,xsecval);
+        }//particle
 	
       } //ang
       
@@ -184,7 +184,7 @@ void CreateMCXSec(const char* infiles, const char* out_histfile){
     }
   }
 
-   //HARP 1D:
+  //HARP 1D:
   foutput->mkdir("xsec1D");
   foutput->cd("xsec1D");
   std::vector<TH1D*> vh1xsec[Npar];

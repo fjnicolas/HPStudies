@@ -9,6 +9,8 @@
 #include <sstream>
 #include <fstream>
 
+//g++ -o CreateInvXS CreateInvXS.C `root-config --cflags --glibs` -I${G4WORKDIR}/include  -L${G4WORKDIR}/build -lg4hpDict
+
 // needed for invariant cross-section calculation
 // these depend on the target geometry & material
 const double rho=1.78; // g/cc graphite
@@ -73,26 +75,26 @@ void CreateInvXS(Double_t mom, Double_t nincident, const char* infile, const cha
      for(Int_t ix=1; ix<=hxs->GetNbinsX(); ix++){
        for(Int_t ipt=1; ipt<=hxs->GetNbinsY(); ipt++){
 
-	 Double_t ptval  = hxs->GetYaxis()->GetBinCenter(ipt); 
-	 Double_t DpT = hxs->GetYaxis()->GetBinWidth(ipt);
-	 Double_t pTup   = ptval + DpT/2.0;
-	 Double_t pTdown = ptval - DpT/2.0;
-	 Double_t DpT2   = pow(pTup,2.)-pow(pTdown,2.);
-	 Double_t xfval = hxs->GetXaxis()->GetBinCenter(ix);
+        Double_t ptval  = hxs->GetYaxis()->GetBinCenter(ipt); 
+        Double_t DpT = hxs->GetYaxis()->GetBinWidth(ipt);
+        Double_t pTup   = ptval + DpT/2.0;
+        Double_t pTdown = ptval - DpT/2.0;
+        Double_t DpT2   = pow(pTup,2.)-pow(pTdown,2.);
+        Double_t xfval = hxs->GetXaxis()->GetBinCenter(ix);
 
-	 Double_t Ener   = getEnergy(mom,xfval, ptval,spart[ii]);  
-	 Double_t yield  = hxs->GetBinContent(ix,ipt);
-	 Double_t err_yield  = hxs->GetBinError(ix,ipt);
+        Double_t Ener   = getEnergy(mom,xfval, ptval,spart[ii]);  
+        Double_t yield  = hxs->GetBinContent(ix,ipt);
+        Double_t err_yield  = hxs->GetBinError(ix,ipt);
 
-	 Double_t DPz    = getDPz(mom,xfval,ptval,spart[ii]);
-	 Double_t DP3    = TMath::Pi()*DPz*DpT2;
-	 Double_t invXS  = Ener/DP3 * (yield/nincident)*sigma_factor;
-	 Double_t err_invXS = Ener/DP3 * (err_yield/nincident)*sigma_factor;
-	 hxs->SetBinContent(ix,ipt,invXS);
-	 hxs->SetBinError(ix,ipt,err_invXS);
-       }
-     }
-   }
+        Double_t DPz    = getDPz(mom,xfval,ptval,spart[ii]);
+        Double_t DP3    = TMath::Pi()*DPz*DpT2;
+        Double_t invXS  = Ener/DP3 * (yield/nincident)*sigma_factor;
+        Double_t err_invXS = Ener/DP3 * (err_yield/nincident)*sigma_factor;
+        hxs->SetBinContent(ix,ipt,invXS);
+        hxs->SetBinError(ix,ipt,err_invXS);
+        }
+      }
+    }
 
 
   foutput->Write();

@@ -34,16 +34,11 @@ std::string spart[Npart] = {"pip","pim","kap","kam","klong","kshort","prt","neu"
 Int_t getHistoID(Double_t xFval);
 Double_t getxF(Int_t id);
 
+// Compile as g++ -o CreateYields CreateYields.C `root-config --cflags --glibs` -I${G4WORKDIR}/include  -L${G4WORKDIR}/build -lg4hpDict
+
 void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, const char* out_QEfile, bool include_ff){
 
-  TFile* foutput = new TFile(out_histfile,"RECREATE");
-
-  std::ofstream qeinfo;
-  qeinfo.open(out_QEfile);
-
-  //Histograms:
-  TH2D*   hxFpT[Npart];
-  
+  // Input variables
   TChain* evts = new TChain("hAinfoTree");
   HPTuple*  hAinfo  = new HPTuple;
   std::ifstream ifs;	
@@ -57,12 +52,17 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
   }	
   ifs.close();  
   evts->SetBranchAddress("hAinfo",&hAinfo);
-  
-  std::cout<< (evts->GetNtrees()) <<" files were added to the chain"<<std::endl;
-  
+
+  // Output file for QE-like event information
+  std::ofstream qeinfo;
+  qeinfo.open(out_QEfile);
   qeinfo<<"Processing "<< (evts->GetNtrees()) <<" trees in the chain"<<std::endl;;
-  qeinfo<<"#Nentries Entries el_like qe_like frag_like prod_entries"<<std::endl;;  
-  //Counting quasielastics:
+  qeinfo<<"#Nentries Entries el_like qe_like frag_like prod_entries"<<std::endl;;
+
+  // Output file for histograms
+  TFile* foutput = new TFile(out_histfile,"RECREATE");
+  
+  // Counting quasielastics:
   Int_t  Nqe_pp        = 0;
   Int_t  Nqe_tot       = 0;
   Int_t  prod_tot      = 0;
@@ -71,6 +71,8 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
   Int_t  el_tot        = 0;
   Double_t sec_p_ener  = 0.;
 
+  // 2D histograms:
+  TH2D*   hxFpT[Npart];
   foutput->cd(0);
   for(Int_t ii=0;ii<6;ii++){
     hxFpT[ii] = new TH2D(Form("xFpT_%s",spart[ii].c_str()),";x_{F}; p_{T} (GeV/c)", 
@@ -87,15 +89,16 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
   TH1D* dndxf_neu_prod     = new TH1D("dndxf_neu_prod"    ,"; x_{F}; dn/dx_{F} for neutrons",100,0.0,1.0);
   TH1D* dndxf_neu_prod_cut = new TH1D("dndxf_neu_prod_cut","; x_{F}; dn/dx_{F} for neutrons",100,0.0,1.0);
 
-  //GetEntries and Loop:
+  // GetEntries and Loop:
   int TEntries = 0;
   int nentries  = (int)evts->GetEntries();
-
+  std::cout<< (evts->GetNtrees()) <<" files were added to the chain"<<std::endl;
   std::cout<<"Entries "<<nentries<<std::endl;;
 
   Long64_t pip_yield=0;
   Long64_t pim_yield=0;
   
+  // Loop over all entries
   for(long int jentry=0;jentry<nentries;jentry++) {
     TEntries++;
     Int_t countpiK      = 0;
@@ -105,9 +108,10 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
     if(jentry%100000==0)std::cout<<"Entry "<<jentry/1000<<" k"<<std::endl;;
     int nb = evts->GetEntry(jentry);  
     
+    // Number of particles in the event
     int npart = int(hAinfo->prodpart.size());
     
-    //looking for new particles and nucleons:
+    // Looking for new particles and nucleons:
     for(int ipart=0;ipart<npart;ipart++){
       int pdg = hAinfo->prodpart[ipart].pdg;
       if(abs(pdg)==211 || abs(pdg)==321)countpiK++;
@@ -117,7 +121,7 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
       if(pdg>1000000000) countFragments++;
     }
     
-    //we look for characterize the event:
+    // We look for characterize the event:
     bool qe_event=false;
     // sometimes QEL-like events have a nuclear fragment, like C11 in the Final State
     // sometimes not
@@ -141,7 +145,7 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
 
     //if(!prod_event && !qe_event && !frag_event && !el_event) evts->Show(jentry);
     
-    ////Filling histograms:
+    // Filling histograms:
     for(int ipart=0;ipart<npart;ipart++){
       int pdg = hAinfo->prodpart[ipart].pdg;
       Double_t xF = hAinfo->prodpart[ipart].xf;
@@ -160,23 +164,23 @@ void CreateYields(Int_t Mom, const char* infiles, const char* out_histfile, cons
       else if(pdg== 2112 && prod_event){ hxFpT[7]->Fill(xF,pT); }
 
       if(xF>-0.1 && xF<0.5){
-	if(pdg==211) pip_yield++;
-	else if(pdg==-211) pim_yield++;
+        if(pdg==211) pip_yield++;
+        else if(pdg==-211) pim_yield++;
       }
 
       // fill neutron yields histograms
       if(pdg==2112){
-	dndxf_neu->Fill(xF);
-	if(prod_event) 	dndxf_neu_prod->Fill(xF);
-	double A=0.398; double B=4.315; // pt< A+B*xF for NA49 neutron acceptance
-	if(pT/1000.0<A+B*xF){
-	  dndxf_neu_cut->Fill(xF);
-	  if(prod_event) 	dndxf_neu_prod_cut->Fill(xF);
-	}
+        dndxf_neu->Fill(xF);
+        if(prod_event) 	dndxf_neu_prod->Fill(xF);
+        double A=0.398; double B=4.315; // pt< A+B*xF for NA49 neutron acceptance
+        if(pT/1000.0<A+B*xF){
+          dndxf_neu_cut->Fill(xF);
+          if(prod_event) 	dndxf_neu_prod_cut->Fill(xF);
+        }
       }
 
-    }
-  }
+    } // end of loop over particles
+  } // end of loop over entries
   
   qeinfo<<nentries<<"    "<<TEntries<<"    "<<el_tot<<"     "<<qe_tot<<"    "<<frag_tot<<"     "<<prod_tot<<std::endl;;
   qeinfo<<"average pi+ multiplicity per production event: "<<double(pip_yield)/double(prod_tot)<<std::endl;;

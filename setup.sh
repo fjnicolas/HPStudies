@@ -25,4 +25,6 @@ setup jobsub_client
 #cmake .
 #make all
 
-
+alias compile_analysis_QE="source ${G4WORKDIR}/AnaQE/compile_analysis_QE.sh"
+alias CreateMCXSec_QE="${G4WORKDIR}/AnaQE/CreateMCXSec_QE"
+alias QElEvents="${G4WORKDIR}/AnaQE/QElEvents"

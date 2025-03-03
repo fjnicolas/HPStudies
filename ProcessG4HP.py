@@ -12,15 +12,15 @@ PWD = os.getenv("PWD")
 ##################################################
 # Job Defaults
 ##################################################
-NJOBS       = 3
+NJOBS       = 20
 OUTDIR       = "/pnfs/{EXPERIMENT}/persistent/users/{USER}/testg4hp/".format(EXPERIMENT = os.getenv("EXPERIMENT"),USER = os.getenv("USER"))
 NUMRUN       = 1
 TARFILE_NAME = "local_install.tar.gz"
 #####
-ENERGY       = "158"
-TARGET       = "C"
+ENERGY       = "9.0"
+TARGET       = "Be"
 PARTICLE     = "proton"
-NEVTS        = "10000"
+NEVTS        = "5000000"
 PHYSICS      = "QGSP_BERT"
 ##################################################
 
