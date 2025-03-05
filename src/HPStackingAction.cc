@@ -11,11 +11,12 @@
 #include <cassert>
 #include <iostream>
 
-HPStackingAction::HPStackingAction()
+HPStackingAction::HPStackingAction(bool _inelasticMode)
 {
   killSecondary  = false;
   pname          = ""; 
   elm            = 0;
+  inelasticMode  = _inelasticMode;
 }
 
 HPStackingAction::~HPStackingAction()
@@ -44,17 +45,29 @@ HPStackingAction::ClassifyNewTrack(const G4Track* aTrack)
      abort();
    }
    else{
-     // OK, we want to save any track that has primary_chain and !fast_decay
-     // the track info is filled in HPTrackingAction
-     if(info->primary_chain==true && info->fast_decay==false){
-       HPEvtAct->AddTrack(aTrack);
+    if(inelasticMode){
+      // OK, we want to save any track that has primary_chain and !fast_decay
+      // the track info is filled in HPTrackingAction
+      if(info->primary_chain==true && info->fast_decay==false){
+        HPEvtAct->AddTrack(aTrack);
 #ifdef DEBUG
-       std::cout<<"Storing "<< aTrack->GetDefinition()->GetParticleName()
-		<<"("<<aTrack->GetTrackID()<<")"<<std::endl;
+        std::cout<<"Storing "<< aTrack->GetDefinition()->GetParticleName()
+		    <<"("<<aTrack->GetTrackID()<<")"<<std::endl;
 #endif
-     }
+      }
+    }
+    else{
+      // Save elastic
+      if(info->is_elastic==true){
+        HPEvtAct->AddTrack(aTrack);
+#ifdef DEBUG
+        std::cout<<"Storing "<< aTrack->GetDefinition()->GetParticleName()
+        <<"("<<aTrack->GetTrackID()<<")"<<std::endl;
+#endif
+      }
+    }
    }
- }
+  }
 
   //stack or delete secondaries
  if (killSecondary)      status = fKill;

@@ -8,6 +8,8 @@ SET(CMAKE_CXX_COMPILER "$ENV{GCC_FQ_DIR}/bin/g++")
 
 project(g4hp C CXX)
 
+add_definitions(-DDEBUG=1)
+
 #----------------------------------------------------------------------------
 # Setup geant4 and root
 #

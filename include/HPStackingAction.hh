@@ -17,7 +17,7 @@ class HPStackingAction : public G4UserStackingAction
 {
 public:
 
-  HPStackingAction();
+  HPStackingAction(bool _inelasticMode = true);
   virtual ~HPStackingAction();
    
   void SetKillStatus(G4bool value)    {killSecondary = value;};
@@ -34,6 +34,7 @@ private:
   G4Element*                  elm;
   G4EventManager *EvtManager;
   HPEventAction *HPEvtAct;
+  G4bool                     inelasticMode;
 
 };
 

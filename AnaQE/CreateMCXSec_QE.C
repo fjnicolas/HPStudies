@@ -1,4 +1,6 @@
 
+// Create differential cross sections as a function of 4 momentum transfer (t)
+// Approximation t~p**2theta**2
 #include <iostream>
 #include <fstream>
 #include "TTree.h"
@@ -27,35 +29,36 @@ const double NAval = 6.022e-4;  // NAval = NA * cm2_per_mb
 const double dx    = 0.7;       // cm target thickness
 const double pival = 3.14159265; // approx
 
-//Kinematics
-const int Nmom = 14;
-const double vmom[Nmom+1] = {0.75,1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,3.25,4.00,5.00,6.50,8.00};
+// Histogram limits
+const double tMin = 0.0;  // GeV^2
+const double tMax = 0.15; // GeV^2
+const int Nt = 30;
 
 // Particle types
-const int Npar =  4;
-const char* part[Npar] = {"pip","pim","prt","neu"};
+const int Ntypes = 4;
+const char* part[Ntypes] = {"QElike", "prod", [2]="forw", [3]="prodContamination"};
 
 int getpartidx(int tpdg);
 
 bool isQEEvent(HPTuple* hAinfo);
+bool isProduction(HPTuple* hAinfo);
+bool isSingleChargedForwardEMPHATIC(HPTuple* hAinfo);
+
+int getLeadingNucleonEntry(HPTuple* hAinfo);
 
 void CreateMCXSec();
 
-void CreateMCXSec(const char* infiles, const char* out_histfile){
+void CreateMCXSec(const char* infiles, const char* out_histfile, const double incidentP){
 
   //--- Output file
   TFile* foutput = new TFile(out_histfile,"RECREATE");
 
   //--- Histograms for multiplicity and cross section
-  TH1D* hmult[Npar];
-  TH1D* hxsec[Npar];
-  TH1D* hmultQE[Npar];
-  TH1D* hxsecQE[Npar];
-  for(int i=0;i<Npar;i++){
-    hmult[i] = new TH1D(Form("hmultA_%s",part[i]),"",Nmom,vmom);
-    hxsec[i] = new TH1D(Form("hxsecA_%s",part[i]),"",Nmom,vmom);
-    hmultQE[i] = new TH1D(Form("hmultQE_%s",part[i]),"",Nmom,vmom);
-    hxsecQE[i] = new TH1D(Form("hxsecQE_%s",part[i]),"",Nmom,vmom);
+  TH1D* hmult[Ntypes];
+  TH1D* hxsec[Ntypes];
+  for(int i=0;i<Ntypes;i++){
+    hmult[i] = new TH1D(Form("hmultA_%s",part[i]),"", Nt, tMin, tMax);
+    hxsec[i] = new TH1D(Form("hxsecA_%s",part[i]),"", Nt, tMin, tMax);
   }
   
   //--- Input files
@@ -106,79 +109,76 @@ void CreateMCXSec(const char* infiles, const char* out_histfile){
   std::cout<<"Entries "<<nentries<<std::endl;;
 
   for(long int jentry=0;jentry<nentries;jentry++){
-     if(jentry%(nentries/10) == 0) std::cout << "." << std::flush;
-     int nb = evts->GetEntry(jentry);  
+    if(jentry%(nentries/10) == 0) std::cout << "." << std::flush;
     
+    int nb = evts->GetEntry(jentry);
     int npart = int(hAinfo->prodpart.size());
 
-    bool isQE = isQEEvent(hAinfo);
+    // check if meson production
+    bool isProd = isProduction(hAinfo);
 
-    // looking for charged pions and nucleons:
-    for(int ipart=0;ipart<npart;ipart++){
-      
-      // get particle type index
-      int idx = getpartidx(hAinfo->prodpart[ipart].pdg);      
-      if(idx<0)continue;
-      
-      // get kinematics
-      double px = hAinfo->prodpart[ipart].mom[0] / 1000.; //MeV/c -> GeV/c
-      double py = hAinfo->prodpart[ipart].mom[1] / 1000.;
-      double pz = hAinfo->prodpart[ipart].mom[2] / 1000.;
-      double pp = sqrt(pow(px,2)+ pow(py,2)+ pow(pz,2) );
-      double aa = 1000.*acos(pz/pp); //mrad
-      
-      // fill histograms
-      hmult[idx]->Fill(pp);
-      hxsec[idx]->Fill(pp);
+    // get leading nucleon entry
+    int leadNucEntry = getLeadingNucleonEntry(hAinfo);
+    if(leadNucEntry<0)continue;
 
-      if(isQE){
-        hmultQE[idx]->Fill(pp);
-        hxsecQE[idx]->Fill(pp);
+    // get the angle of the leading nucleon with respect to the beam (z-axis)
+    double px = hAinfo->prodpart[leadNucEntry].mom[0] / 1000.; //MeV/c -> GeV/c
+    double py = hAinfo->prodpart[leadNucEntry].mom[1] / 1000.;
+    double pz = hAinfo->prodpart[leadNucEntry].mom[2] / 1000.;
+    double pp = sqrt(pow(px,2)+ pow(py,2)+ pow(pz,2) );
+    double aa = acos(pz/pp); // mrad
+
+    // fill histograms
+
+    // QE
+    if(!isProd){
+      hmult[0]->Fill( incidentP * incidentP * aa * aa );
+      hxsec[0]->Fill( incidentP * incidentP * aa * aa );
+    }
+
+    if( isProd ){
+      hmult[1]->Fill( incidentP * incidentP * aa * aa );
+      hxsec[1]->Fill( incidentP * incidentP * aa * aa );
+
+      if( isSingleChargedForwardEMPHATIC(hAinfo) ){
+        hmult[3]->Fill( incidentP * incidentP * aa * aa );
+        hxsec[3]->Fill( incidentP * incidentP * aa * aa );
       }
-    } // end loop over particles
+    }
+
+    if( isSingleChargedForwardEMPHATIC(hAinfo) ){
+      hmult[2]->Fill( incidentP * incidentP * aa * aa );
+      hxsec[2]->Fill( incidentP * incidentP * aa * aa );
+    }
+    
     
   } // end loop over entries
   
-  // Scale multiplicity histograms
-  for(int i=0;i<Npar;i++){
-    hmult[i]->Scale(1./dPOT);
-  }
   
   // Cross Sections:
-  int Nmom = hxsec[0]->GetXaxis()->GetNbins();
-  for(int i=1;i<=Nmom;i++){
-    double pmin   = hxsec[0]->GetXaxis()->GetBinLowEdge(i);
-    double pmax   = hxsec[0]->GetXaxis()->GetBinUpEdge(i);
-    double deltap = pmax - pmin;
+  double delta_t = (tMax - tMin)/Nt;
+  for(int i=1;i<=Nt;i++){
 
-    // loop over particles
-    for(int k=0;k<Npar;k++){
+    // loop over the histograms
+    for(int k=0;k<Ntypes;k++){
       
-      // total cross section
+      // differential cross section
       double xsecval = hxsec[k]->GetBinContent(i);
-      xsecval *= (sigma_factor/ (deltap) );
+      xsecval *= (sigma_factor/delta_t);
       hxsec[k]->SetBinContent(i,xsecval);
-
-      // QE cross section
-      xsecval = hxsecQE[k]->GetBinContent(i);
-      xsecval *= (sigma_factor/ (deltap) );
-      hxsecQE[k]->SetBinContent(i,xsecval);
-
-    } // end particle loop
     
+    } // end loop on histograms
     
-  } // end loop on mom
+  } // end loop on t
 
   // Write output histograms
   foutput->mkdir("mult");
   foutput->mkdir("xsec");
-  for(int i=0;i<Npar;i++){
+  for(int i=0;i<Ntypes;i++){
     foutput->cd("mult");
     hmult[i]->Write();
-    hmultQE[i]->Write();
     foutput->cd("xsec");
     hxsec[i]->Write();
-    hxsecQE[i]->Write();
   }
   // Write incident energy variable
   foutput->cd();
@@ -203,19 +203,82 @@ int getpartidx(int tpdg){
 /////////////////// Check QE event
 bool isQEEvent(HPTuple* hAinfo){
   int npart = int(hAinfo->prodpart.size());
-  int countLightMesons = 0;
+  int countMesons = 0;
   int countNucleons = 0;
   int countFragments = 0;
   for(int ipart=0;ipart<npart;ipart++){
     int pdg = hAinfo->prodpart[ipart].pdg;
-    if(abs(pdg)==211 || pdg==111 || abs(pdg)==321 || pdg==130 || pdg==310) countLightMesons++;
+    if(abs(pdg)==211 || pdg==111 || abs(pdg)==321 || pdg==130 || pdg==310) countMesons++;
     if(pdg==2212 || pdg==2112) countNucleons++;
     if(pdg>1000000000) countFragments++;
   }
 
-  if(countLightMesons==0 && countNucleons==2 && countFragments<=1) return true;
+  if(countMesons==0 && countNucleons==2 && countFragments<=1) return true;
   return false;
 }
+
+bool isProduction(HPTuple* hAinfo){
+  int npart = int(hAinfo->prodpart.size());
+  int countMesons = 0;
+  int countNucleons = 0;
+  int countFragments = 0;
+  for(int ipart=0;ipart<npart;ipart++){
+    int pdg = hAinfo->prodpart[ipart].pdg;
+    if(abs(pdg)==211 || pdg==111 || abs(pdg)==321 || pdg==130 || pdg==310) countMesons++;
+    if(pdg==2212 || pdg==2112) countNucleons++;
+    if(pdg>1000000000) countFragments++;
+  }
+
+  return countMesons>0;
+}
+
+bool isSingleChargedForwardEMPHATIC(HPTuple* hAinfo){
+  int npart = int(hAinfo->prodpart.size());
+  int countCharged = 0;
+  for(int ipart=0;ipart<npart;ipart++){
+    int pdg = hAinfo->prodpart[ipart].pdg;
+    if(abs(pdg)==211 || abs(pdg)==321 || abs(pdg)==2212){
+      // get theta angle
+      double px = hAinfo->prodpart[ipart].mom[0];
+      double py = hAinfo->prodpart[ipart].mom[1];
+      double pz = hAinfo->prodpart[ipart].mom[2];
+      double pp = sqrt(px*px + py*py + pz*pz);
+      double aa = acos(pz/pp)*1000;
+
+      // EMPHATIC tolerance is 20 mrad
+      if(aa<20) countCharged++;
+    }
+  }
+
+  return countCharged==1;
+}
+
+int getLeadingNucleonEntry(HPTuple* hAinfo){
+
+  double maxp = 0;
+  int maxp_entry = -1;
+
+  int npart = int(hAinfo->prodpart.size());
+
+  for(int ipart=0;ipart<npart;ipart++){
+    int pdg = hAinfo->prodpart[ipart].pdg;
+    if(pdg==2212 || pdg==2112){
+      double px = hAinfo->prodpart[ipart].mom[0];
+      double py = hAinfo->prodpart[ipart].mom[1];
+      double pz = hAinfo->prodpart[ipart].mom[2];
+      double pp = sqrt(px*px + py*py + pz*pz);
+
+      if(pp>maxp){
+        maxp = pp;
+        maxp_entry = ipart;
+      }
+    }
+  }
+
+  return maxp_entry;
+
+}
+
 
 /////////////////// CreateMCXSec
 void CreateMCXSec(){
@@ -229,7 +292,7 @@ int main(int argc, const char* argv[]){
     CreateMCXSec();
     exit (1);
   }  
-  CreateMCXSec(argv[1],argv[2]);
+  CreateMCXSec(argv[1], argv[2], atof(argv[3]));
   return 0;
 }
 # endif

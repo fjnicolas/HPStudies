@@ -11,6 +11,7 @@ unset G4BIN
 
 SETUPDIR=${PWD}
 export G4WORKDIR=${SETUPDIR}
+export G4ANADIR=${G4WORKDIR}/plotting
 export LD_LIBRARY_PATH=${G4WORKDIR}/build:${G4WORKDIR}/ana:${LD_LIBRARY_PATH}
 
 #change this to your experiment

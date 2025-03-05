@@ -9,7 +9,7 @@ HPConfig :: HPConfig (int argc, char **argv) :
   
   char option;
 
-  while ((option = getopt (argc, argv, "t:a:z:d:r:p:e:l:n:x:f:k:yh")) != -1)
+  while ((option = getopt (argc, argv, "t:a:z:d:r:p:e:l:n:x:f:k:w:yh")) != -1)
     switch (option)
     {
       case 't': setTarget(optarg); break;
@@ -24,6 +24,7 @@ HPConfig :: HPConfig (int argc, char **argv) :
       case 'x': runNumber = optarg; break;
       case 'f': outputFile = optarg; break;
       case 'k': outputDir = optarg; break;
+      case 'w': workflowType = optarg; break;
       case 'y': isConfirmed = true; break;
       case 'h': usage();
       case '?': if (optopt == 'c' or isprint (optopt)) usage();
@@ -77,6 +78,7 @@ void HPConfig :: usage () const
             << "(default = particle_energy_target_runnumber.root)\n";
   std::cout << "\n\t -k [output directory], optional "
             << "(default = $G4HP_ROOTDIR or pwd/g4hp_root_files)\n";
+  std::cout << "\n\t -w [workflow type], options are inelastic/elastic\n";
   std::cout << "\n\t -y to skip checking configuration\n\n";
 
   exit(1);

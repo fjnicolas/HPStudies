@@ -15,6 +15,7 @@ public:
   bool primary_chain; // did the primary particle make this one?
   bool fast_decay; // does this particle decay quickly?
   bool fast_decay_progeny; // did this particle have a quickly decaying anscestor?
+  bool is_elastic; // is this particle elastic?
 
 };
 

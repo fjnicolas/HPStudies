@@ -53,6 +53,7 @@ class HPConfig
     inline G4String getRunNumber() const {return runNumber;};
     inline G4String getOutputFile() const {return outputFile;};
     inline G4String getOutputDir() const {return outputDir;};
+    inline G4String getWorkflowType() const {return workflowType;};
     TTree* createTree() const; //create ROOT TTree with sim config
 
   private:
@@ -70,6 +71,8 @@ class HPConfig
     G4String runNumber;       //used in random seed and auto outputFile
     G4String outputFile;      //output root file
     G4String outputDir;       //output root directory
+    G4String workflowType;    //either to store elastic or inelastic events
+
 
     bool isConfirmed;         //checkConf will be called if false
 };

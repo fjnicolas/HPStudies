@@ -16,7 +16,11 @@ HPEventAction::~HPEventAction(){}
 void HPEventAction::BeginOfEventAction(const G4Event* evt)
 {
   G4int nEvt = evt->GetEventID();
-  if(nEvt%1000==0)G4cout<<"EventID " <<nEvt<<G4endl;
+#ifdef DEBUG
+  G4cout<<"EventID " <<nEvt<<G4endl;
+#endif
+
+  if(nEvt%1000==0)std::cout<<std::endl<<"\n EventID " <<nEvt<<G4endl;
   
 }
 

@@ -24,7 +24,10 @@
 
 int main(int argc,char** argv) {
   HPConfig config (argc, argv);
-  
+
+  std::cout << " Input workflow type is: " << config.getWorkflowType() << std::endl;
+  bool inelasticMode = config.getWorkflowType() != "elastic";
+
   //choose the Random engine
   CLHEP::HepRandom::setTheEngine(new CLHEP::RanecuEngine());
   
@@ -51,7 +54,7 @@ int main(int argc,char** argv) {
   //set user action classes
   runManager->SetUserAction(new HPRunAction(config));
   runManager->SetUserAction(new HPEventAction());
-  runManager->SetUserAction(new HPStackingAction());
+  runManager->SetUserAction(new HPStackingAction(inelasticMode));
   runManager->SetUserAction(new HPTrackingAction());
   
   // get the pointer to the UI manager and set verbosities

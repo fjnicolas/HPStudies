@@ -85,6 +85,17 @@ G4TrackVector* secondaries = fpTrackingManager->GimmeSecondaries();
 	  (secondary->GetCreatorProcess()->GetProcessName()=="pi+Inelastic") || 
 	  (secondary->GetCreatorProcess()->GetProcessName()=="pi-Inelastic");
 	
+	bool elastic = (secondary->GetCreatorProcess()->GetProcessName()=="hadElastic")	;
+	
+	std::cout << " | Creator process: " << secondary->GetCreatorProcess()->GetProcessName();
+
+	if( (incoming_primary && elastic) ){
+	  infoNew->is_elastic=true;
+#ifdef DEBUG
+	  std::cout<<" | elastic";
+#endif
+	}
+	
 	if( (incoming_primary && inel)  
 	    || ( info->primary_chain && info->fast_decay)){
 	  infoNew->primary_chain=true;

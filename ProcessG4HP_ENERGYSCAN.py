@@ -15,7 +15,7 @@ PWD = os.getenv("PWD")
 # Job Defaults
 ##################################################
 NJOBS       = 20
-OUTDIR       = "/pnfs/{EXPERIMENT}/persistent/users/{USER}/testg4hp/".format(EXPERIMENT = os.getenv("EXPERIMENT"),USER = os.getenv("USER"))
+OUTDIR       = "/pnfs/{EXPERIMENT}/scratch/users/{USER}/QGSP_BERT/".format(EXPERIMENT = os.getenv("EXPERIMENT"),USER = os.getenv("USER"))
 NUMRUN       = 1
 TARFILE_NAME = "local_install.tar.gz"
 #####
@@ -24,11 +24,12 @@ TARGET       = "Be"
 PARTICLE     = "proton"
 NEVTS        = "5000000"
 PHYSICS      = "QGSP_BERT"
+WORKFLOW     = "inelastic"
 ##################################################Q
 
 #INCIDENT_ENERGIES = ["0.1", "0.25", "0.5", "1.", "1.5", "2.", "4.", "6.", "8.", "10.", "30.", "60.", "90."]
-
-INCIDENT_ENERGIES = ["2.", "4.", "6.", "8.", "19.3", "30.", "60.", "90."]
+INCIDENT_ENERGIES = ["2.", "4.", "6.", "8.", "19.3", "29.", "90."]
+INCIDENT_ENERGIES = ["8."]
 
 def main():
   options = get_options()
@@ -55,6 +56,8 @@ def main():
 
     this_outdir = options.outdir + "/e" + _energy
 
+    print("Workflows: ", options.workflow, " ", WORKFLOW)
+
     logfile = this_outdir + "/g4hp_p{PARTICLE}_e{ENERGY}_t{TARGET}_e{NEVTS}_r{NUMRUN}_l{PHYSICS}_\$PROCESS.log".format(PARTICLE=options.particle,
                                                                                                                           ENERGY=_energy,
                                                                                                                           TARGET=options.target,
@@ -74,7 +77,8 @@ def main():
 
     submit_command = ("jobsub_submit {GRID} {MEMORY} -N {NJOBS} -d G4HP {OUTDIR} "
         "-G {EXPERIMENT} --expected-lifetime=long "
-        "-e PHYSICS={PHYSICS} " 
+        "-e PHYSICS={PHYSICS} "
+        "-e WORKFLOW={WORKFLOW} " 
         "-e PARTICLE={PARTICLE} " 
         "-e ENERGY={ENERGY} " 
         "-e TARGET={TARGET} "  
@@ -93,7 +97,8 @@ def main():
         EXPERIMENT = os.getenv("EXPERIMENT"),
         PARTICLE   = options.particle,    
         ENERGY     = _energy,
-        PHYSICS    = options.physics,    
+        PHYSICS    = options.physics,
+        WORKFLOW   = options.workflow,    
         TARGET     = options.target,
         NEVTS      = options.nevts,
         NUMRUN     = options.numrun,
@@ -125,6 +130,11 @@ def get_options():
   physics_group.add_option('--physics', default = PHYSICS, 
                         help="Select physics list.Default = %default.")
 
+  workflow_group   = optparse.OptionGroup(parser, "Workflow Options")
+
+  workflow_group.add_option('--workflow', default = WORKFLOW,
+                        help="Select workflow.Default = %default.")
+
   beam_group   = optparse.OptionGroup(parser, "Beam Options")
   
   beam_group.add_option('--particle', default = PARTICLE, 
@@ -149,6 +159,7 @@ def get_options():
   
   parser.add_option_group(grid_group)
   parser.add_option_group(physics_group)
+  parser.add_option_group(workflow_group)
   parser.add_option_group(beam_group)
   parser.add_option_group(target_group)
   parser.add_option_group(run_group)
