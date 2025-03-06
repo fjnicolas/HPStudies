@@ -29,15 +29,18 @@ include_directories(${PROJECT_SOURCE_DIR}/include
 file(GLOB sources  ${PROJECT_SOURCE_DIR}/src/*.cc)
 file(GLOB hheaders ${PROJECT_SOURCE_DIR}/include/*.hh)
 file(GLOB headers  ${PROJECT_SOURCE_DIR}/include/*.h)
+file(GLOB headers  ${PROJECT_SOURCE_DIR}/*.h)
+file(GLOB headers  ${PROJECT_SOURCE_DIR}/*.hh)
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g" )
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build) # just for libg4hpDict.so
 #----------------------------------------------------------------------------
 #g4hpCint
-#
-add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/g4hpCint.cc COMMAND rootcint -f 
-                   g4hpCint.cc -c include/hptuple.hh include/TrackInfo_t.hh Linkdef.h)
-add_library(g4hpDict SHARED ${PROJECT_SOURCE_DIR}/g4hpCint.cc
+
+add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/build/g4hpCint.cc COMMAND rootcint -f 
+	                   g4hpCint.cc -c ${PROJECT_SOURCE_DIR}/include/hptuple.hh ${PROJECT_SOURCE_DIR}/include/TrackInfo_t.hh ${PROJECT_SOURCE_DIR}/Linkdef.h)
+
+add_library(g4hpDict SHARED ${PROJECT_SOURCE_DIR}/build/g4hpCint.cc
 	    ${PROJECT_SOURCE_DIR}/src/TrackInfo_t.cc 
 	    ${PROJECT_SOURCE_DIR}/src/hptuple.cc )
 

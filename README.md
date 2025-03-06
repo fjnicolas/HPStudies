@@ -5,14 +5,16 @@
 - Make sure to be in SL7 container
 - source setup.sh
 - Compile using usual CMake
-    - mkdir build; cd build; cmake ..;
-    - cd ..; make;
+    - mkdir build
+    - cd build
+    - cmake ..
+    - cmake --build .
 
 
 ## Running the G4 simulation
 
 - Executable is `g4hp`
-- `./g4hp -h`
+- `build/g4hp -h`
 
 ## Generating grid jobs
 - `ProcessG4HP.py`: send grid jobs for a single configuration
@@ -20,7 +22,7 @@
 
 ## QE analysis
 - They live in the `AnaQE/` directory
-- To compile the programs in `AnaQE/`, somply run `compile_analysis_QE` (this is just an alias defined in the setup script)
+- To compile the programs, simply run `compile_analysis_macros` (this is just an alias defined in the setup script)
 - To make distribution of # events per final state category: run `QElEvents` macro
 - To create differential cross section (as a function of four transfer momentum): run `CreateMCXSec_QE` macro
     - Run as `CreateMCXSec_QE [input_files_list] [output_ROOT_file] [incidentMomemtum]`, e.g.
