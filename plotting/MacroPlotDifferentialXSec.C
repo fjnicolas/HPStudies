@@ -5,7 +5,8 @@ void MacroPlotDifferentialXSec(){
 }
 
 std::vector kColors = {kGreen+2, kRed+3, kBlue+4};
-TGraph* PlotBellettiniData(std::string filename, double mom){
+
+TGraphErrors* PlotBellettiniData(std::string filename, double mom){
 
     std::ifstream file(filename);
     if (!file.is_open()){
@@ -39,7 +40,7 @@ TGraph* PlotBellettiniData(std::string filename, double mom){
     }
 
     // plot
-    TGraph *g = new TGraph(t_v.size(), &t_v[0], &xsec_v[0]);
+    TGraphErrors *g = new TGraphErrors(t_v.size(), &t_v[0], &xsec_v[0], 0, 0);
     g->SetMarkerStyle(20);
     g->SetMarkerColor(kAzure);
 
@@ -47,7 +48,7 @@ TGraph* PlotBellettiniData(std::string filename, double mom){
 }
 
 
-TGraph* PlotEMPHATICData(std::string filename, double matScaling = 1.0){
+TGraphErrors* PlotEMPHATICData(std::string filename, double matScaling = 1.0){
     // Load EMPHATIC data
     ifstream fileEMPHATIC(datasetsParentPath + "EMPHATIC_pC_30GeV.txt");
     if (!fileEMPHATIC.is_open()){
@@ -57,17 +58,18 @@ TGraph* PlotEMPHATICData(std::string filename, double matScaling = 1.0){
 
     // Format of the file for each line is range_low range_high xsec
     // Read the file and store the data in a TGraph
-    std::vector<double> x, y;
-    double range_low, range_high, xsec;
+    std::vector<double> x, y, yerr;
+    double range_low, range_high, xsec, tot_err;
     while(!fileEMPHATIC.eof()){
         double aux;
-        fileEMPHATIC >> range_low >> range_high >> xsec >> aux >> aux >> aux >> aux >> aux >> aux;
+        fileEMPHATIC >> range_low >> range_high >> xsec >> aux >> aux >> aux >> aux >> tot_err >> aux;
         x.push_back(0.5*(range_low + range_high));
         y.push_back( xsec * matScaling );
+        yerr.push_back( tot_err * matScaling );
         std::cout << 0.5*(range_low + range_high) << " " << xsec * matScaling << std::endl;
     }
 
-    TGraph *g = new TGraph(x.size(), &x[0], &y[0]);
+    TGraphErrors *g = new TGraphErrors(x.size(), &x[0], &y[0], 0, &yerr[0]);
     g->SetMarkerStyle(20);
     g->SetMarkerColor(kRed+2);
     g->SetTitle(";p^{2}#theta^{2} [(GeV/c)^{2}];d#sigma/dt (mb/(GeV/c)^{2})");
@@ -75,6 +77,7 @@ TGraph* PlotEMPHATICData(std::string filename, double matScaling = 1.0){
     return g;
 
 }
+
 
 TF1* AddQESlopeFitting(std::vector<TH1D*> hV, double range_min, double range_max){
     // Exponential fit
@@ -94,6 +97,83 @@ TF1* AddQESlopeFitting(std::vector<TH1D*> hV, double range_min, double range_max
 }
 
 
+void PlotRatioDataG4(std::vector<TH1D*> hV, TGraphErrors *grData, std::string label, double min, double max){
+
+    // Make total histogram
+    TH1F *hSum = new TH1F("hSum", label.c_str(), hV[0]->GetNbinsX(), hV[0]->GetXaxis()->GetXmin(), hV[0]->GetXaxis()->GetXmax());
+    for(int i = 0; i < hV.size(); i++){
+        hSum->Add(hV[i]);
+    }
+
+    // Data
+    TH1* hData = new TH1F("hData", label.c_str(), hSum->GetNbinsX(), hSum->GetXaxis()->GetXmin(), hSum->GetXaxis()->GetXmax());
+    for(int i = 0; i < grData->GetN(); i++){
+        double x, y, yerr;
+        grData->GetPoint(i, x, y);
+        yerr = grData->GetErrorY(i);
+        std::cout << "x: " << x << " y: " << y << std::endl;
+        if(x < min || x > max) continue;
+        // get bin
+        int bin = hData->FindBin(x);
+        hData->SetBinContent(bin, y);
+        if(yerr > 0)
+            hData->SetBinError(bin, yerr);
+        std::cout << "    x: " << x << " y: " << y << " bin: " << bin << std::endl;
+    }
+
+    TLegend *legend = new TLegend(0.6, 0.6, 0.9, 0.9);
+    legend->SetHeader(label.c_str());
+
+    // Ratio plot
+    TRatioPlot *rp = new TRatioPlot(hData, hSum);
+    rp->SetH2DrawOpt("hist");
+    rp->SetH1DrawOpt("p");
+    rp->SetGraphDrawOpt("p");    
+    rp->Draw();
+
+    rp->SetLowBottomMargin(0.55);
+    rp->SetLeftMargin(0.15);
+
+    double minY = std::min( hData->GetMinimum(0), hSum->GetMinimum(0) );
+    double maxY = std::max( hData->GetMaximum(), hSum->GetMaximum() );
+    rp->GetUpperRefYaxis()->SetRangeUser(0.9*minY, 1.1*maxY);
+
+    // marker style first histogram
+    hSum->SetLineColor(kRed+2);
+    hSum->SetLineWidth(2);
+    // marker style second histogram
+    hData->SetMarkerStyle(20);
+    hData->SetMarkerColor(kAzure);
+    rp->SetSeparationMargin(0.001);
+    // no stats
+    hSum->SetStats(0);
+    hData->SetStats(0);
+
+    rp->GetUpperRefYaxis()->SetTitle("d#sigma/dt (mb/(GeV/c)^{2})");
+    rp->GetLowerRefYaxis()->SetTitle("Data / G4");
+    hSum->GetXaxis()->SetTitle("p^{2}#theta^{2} [(GeV/c)^{2}]");
+    hData->GetXaxis()->SetTitle("p^{2}#theta^{2} [(GeV/c)^{2}]");
+
+    rp->GetLowerRefGraph()->SetMarkerStyle(20);
+    rp->GetLowerRefGraph()->SetMarkerColor(kBlack);
+    rp->GetLowerRefGraph()->SetLineColor(kBlack);
+    rp->GetLowerRefGraph()->SetLineWidth(2);
+    rp->GetLowerRefGraph()->SetMarkerSize(1.2);
+
+    // Ratio plot limits
+    rp->GetLowerRefYaxis()->SetRangeUser(0.01, 2.);
+    rp->GetLowYaxis()->SetNdivisions(1005);
+    
+    // Offsets
+    rp->GetLowerRefYaxis()->SetTitleOffset(1.2);
+    rp->GetUpperRefYaxis()->SetTitleOffset(1.2);
+    rp->GetLowerRefXaxis()->SetTitleOffset(1.2);
+
+    legend->AddEntry(hSum, "G4", "l");
+    legend->AddEntry(hData, "Data", "p");
+    legend->Draw("same");
+;
+}
 
 
 void PlotDifferentialXSec(std::string material, double mom){
@@ -130,10 +210,16 @@ void PlotDifferentialXSec(std::string material, double mom){
     std::string canvasName = "p-"+material+"@"+std::to_string( (int) mom)+"GeV";
     TCanvas *c = new TCanvas("c", canvasName.c_str(), 100, 100, 1300, 1000);
     c->cd();
-    TPad *pad1 = new TPad("pad1", "pad1", 0., 0., 1., 1.);
+    TPad *pad1 = new TPad("pad1", "pad1", 0., 0., 0.5, 0.5);
+    TPad *pad2 = new TPad("pad2", "pad2", 0.5, 0., 1., 0.5);
+    TPad *pad3 = new TPad("pad3", "pad3", 0., 0.5, 0.5, 1.);
+    TPad *pad4 = new TPad("pad4", "pad4", 0.5, 0.5, 1., 1.);
     pad1->Draw();
+    pad2->Draw();
+    pad3->Draw();
+    pad4->Draw();
+   
     pad1->cd();
-
     // Frame
     double min_t = 0.0;
     double max_t = 0.15;
@@ -167,13 +253,13 @@ void PlotDifferentialXSec(std::string material, double mom){
 
     
     // EMPHATIC data
-    TGraph * grEMPHATIC = PlotEMPHATICData(filenameEMPHATIC, matScaling);
+    TGraphErrors * grEMPHATIC = PlotEMPHATICData(filenameEMPHATIC, matScaling);
     grEMPHATIC->Draw("p same");
     if(material == "C") legend->AddEntry(grEMPHATIC, "EMPHATIC data", "p");
     else if(material == "Be") legend->AddEntry(grEMPHATIC, "EMPHATIC data (scaled)", "p");
 
     // Bellettini data
-    TGraph * grBellettini = PlotBellettiniData(filenameBellettini, mom);
+    TGraphErrors * grBellettini = PlotBellettiniData(filenameBellettini, mom);
     grBellettini->Draw("p same");
     legend->AddEntry(grBellettini, "Bellettini data", "p");
 
@@ -187,17 +273,31 @@ void PlotDifferentialXSec(std::string material, double mom){
     std::string fitLabel = "Fit (slope: " + streamVal.str() + " #pm " + streamErr.str() + " mb/(GeV/c)^{2})";
     legend->AddEntry(qeFit, fitLabel.c_str(), "l");
 
-
-
-
-    
-
-
-    
-
     legend->Draw("same");
     hFrame->Draw("same axis");
-    //pad1->SetLogy();
+
+    pad2->cd();
+    gPad->SetLogy();    
+    gPad->SetBottomMargin(0.15);
+    gPad->SetLeftMargin(0.15);
+    hFrame->Draw();
+    hStack->Draw("same");
+    grEMPHATIC->Draw("p same");
+    grBellettini->Draw("p same");
+    qeFit->Draw("same");
+    legend->Draw("same");
+    hFrame->Draw("same axis");
+
+
+    pad3->cd();
+    PlotRatioDataG4(hV, grEMPHATIC, "EMPHATIC", 0.05, 0.15);
+    gPad->SetBottomMargin(0.15);
+    gPad->SetLeftMargin(0.15);
+
+    pad4->cd();
+    PlotRatioDataG4(hV, grBellettini, "Bellettini", 0.05, 0.15);
+    
+
 
     c->cd();
     c->Update();
